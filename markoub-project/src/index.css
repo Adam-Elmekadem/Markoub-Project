@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@layer utilities {
+
+/*
+	Cross-browser utility to hide scrollbars while keeping scrolling functional.
+	Use the class `no-scrollbar` on overflowed containers.
+*/
+.no-scrollbar {
+	-ms-overflow-style: none; /* IE and Edge */
+	scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+	display: none; /* Chrome, Safari and Opera */
+}
+
+/* Alias for older naming or plugin compatibility */
+.scrollbar-hide {
+	-ms-overflow-style: none; /* IE and Edge */
+	scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+	display: none; /* Chrome, Safari and Opera */
+}
+
+/* Enable native momentum scrolling on iOS and allow horizontal pan gestures */
+.touch-scroll {
+	-webkit-overflow-scrolling: touch;
+	touch-action: pan-x;
+	overscroll-behavior-x: contain;
+}
+
+.cursor-grabbing {
+	cursor: grabbing;
+}
+
+/* Mobile-only scrollbar hiding (show scrollbars on desktop if desired) */
+@media (max-width: 768px) {
+	.mobile-scroll-hide {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+	.mobile-scroll-hide::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+/* Debug helper to visualize overflowing scroll wrappers during development.
+   Remove after debugging. */
+.debug-overflow {
+  outline: 2px dashed rgba(220, 38, 38, 0.9); /* red dashed */
+  background: rgba(220, 38, 38, 0.02); /* subtle tint */
+}
+}
+
+/* Fallback blog content styles in case the Tailwind Typography plugin or prose overrides
+	 are not available in the current build. These target the .blog-content wrapper that
+	 is added around post HTML content. */
+.blog-content h2 {
+	font-size: 1.875rem; /* 30px */
+	line-height: 1.15;
+	font-weight: 800;
+	margin-top: 2rem;
+	margin-bottom: 1rem;
+}
+.blog-content h3 {
+	font-size: 1.5rem; /* 24px */
+	line-height: 1.2;
+	font-weight: 600;
+	margin-top: 1.5rem;
+	margin-bottom: 0.75rem;
+}
+.blog-content p {
+	margin-top: 0.75rem;
+	margin-bottom: 0.75rem;
+	line-height: 1.8;
+}
+
