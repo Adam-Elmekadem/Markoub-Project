@@ -32,7 +32,6 @@ export const Blogs = () => {
         setBlogs(normalized);
         setSelectedBlog(normalized[0] || null);
       } catch (e) {
-        // fallback to empty
         setBlogs([]);
         setSelectedBlog(null);
         setError(e?.message || 'Failed to load blogs');
@@ -124,10 +123,8 @@ export const Blogs = () => {
             </div>
           </aside>
 
-          {/* Main Content */}
           <main className="lg:w-2/3 xl:w-3/4">
             <article className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              {/* Featured Image */}
               <div className="relative h-64 md:h-96 overflow-hidden">
                 <img
                   src={selectedBlog?.image}
@@ -137,9 +134,7 @@ export const Blogs = () => {
                 <div className="absolute inset-0 to-transparent"></div>
               </div>
 
-              {/* Content */}
               <div className="p-6 md:p-10">
-                {/* Meta Info */}
                 <div className="flex flex-wrap items-center gap-4 mb-6">
                   <span className="flex items-center gap-2 text-slate-600">
                     <User className="w-4 h-4" />
@@ -159,18 +154,15 @@ export const Blogs = () => {
                   </span>
                 </div>
 
-                {/* Title */}
                 <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-6">
                   {selectedBlog?.title}
                 </h1>
 
-                {/* Blog Content */}
                 <div
                   className="prose prose-slate max-w-none prose-h2:text-3xl prose-h2:font-extrabold prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-2xl prose-h3:font-semibold prose-h3:mt-6 prose-h3:mb-3 prose-p:leading-relaxed prose-p:mt-4 blog-content"
                   dangerouslySetInnerHTML={{ __html: selectedBlog?.content || '' }}
                 />
 
-                {/* Share Section */}
                 <div className="mt-12 pt-6 border-t border-slate-200">
                   <p className="text-slate-600 text-sm">
                     Found this helpful? Share your thoughts or experiences with the MARKOUB community!

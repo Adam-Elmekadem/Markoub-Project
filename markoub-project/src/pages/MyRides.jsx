@@ -176,7 +176,7 @@ export const MyRides = () => {
       setHighlightedRide({ id: rideId, status: 'in_road' });
       setTimeout(() => setHighlightedRide(null), 4000);
     } catch (e) {
-      // handled in markRideStatus
+      console.error('Failed to start ride', e);
     }
   };
 

@@ -16,13 +16,11 @@ export const AdminLayout = () => {
   const currentIndex = navItems.findIndex((n) => n.path === pathname || (n.path !== '/admin' && pathname.startsWith(n.path)));
 
   return (
-  <div className="min-h-screen bg-gray-50 pt-20 pb-24 overflow-x-hidden">
-      {/* Mobile top nav for quick prev/next between admin pages */}
+  <div className="min-h-screen bg-gray-50 pt-20 pb-24 overflow-x-visible">
       <div className="fixed bottom-4 left-0 right-0 z-50 md:hidden" style={{paddingBottom: 'env(safe-area-inset-bottom)'}}>
-        {/* full-bleed wrapper so the scroll area can use the entire viewport width on mobile */}
         <div className="px-4">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2">
-            <div className="flex gap-3 overflow-x-auto no-scrollbar touch-scroll py-2 px-1 w-full">
+            <div className="flex gap-3 overflow-x-auto md:force-scrollbar mobile-scroll-hide touch-scroll py-2 px-1 w-full">
               {navItems.map((item, idx) => {
                 const Icon = item.icon;
                 const active = idx === currentIndex;

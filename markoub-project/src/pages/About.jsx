@@ -39,7 +39,6 @@ const CountUp = ({ end, duration = 2000, suffix = '' }) => {
     return () => observer.disconnect();
   }, [end, duration, hasAnimated]);
 
-  // Format the count back with suffix
   const formatCount = (num) => {
     const endStr = end.toString();
     if (endStr.includes('k') || endStr.includes('K')) {

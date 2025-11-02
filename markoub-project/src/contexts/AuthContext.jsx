@@ -8,7 +8,6 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
-  // Load from localStorage on mount
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -23,14 +22,12 @@ export const AuthProvider = ({ children }) => {
             setUser(parsed.user || null);
           }
         }
-        // If token exists, try to refresh user from /me to validate token
         if (token) {
           try {
             const u = await AuthAPI.me();
             if (mounted) setUser(u);
             if (u) setIsAuthenticated(true);
           } catch (e) {
-            // invalid token, clear
             localStorage.removeItem('auth_token');
             if (mounted) {
               setIsAuthenticated(false);
@@ -39,7 +36,7 @@ export const AuthProvider = ({ children }) => {
           }
         }
       } catch (err) {
-        // ignore
+        console.error('Auth initialization failed', err);
       } finally {
         if (mounted) setIsAuthLoading(false);
       }
@@ -47,28 +44,38 @@ export const AuthProvider = ({ children }) => {
     return () => { mounted = false; };
   }, []);
 
-  // Persist to localStorage when auth changes
   useEffect(() => {
     try {
       localStorage.setItem('auth', JSON.stringify({ isAuthenticated, user }));
     } catch {}
   }, [isAuthenticated, user]);
 
-  const login = async ({ email, password }) => {
+ 
+  const login = async ({ email, password, remember = true }) => {
     if (!email || !password) throw new Error('Email and password are required');
     const data = await AuthAPI.login({ email, password });
     const token = data?.token;
     if (!token) throw new Error('No token returned');
-    localStorage.setItem('auth_token', token);
+    try {
+      if (remember) localStorage.setItem('auth_token', token);
+      else sessionStorage.setItem('auth_token', token);
+    } catch {}
     setUser(data?.user || null);
     setIsAuthenticated(true);
     return data?.user;
   };
 
+  // register accepts same options as before; if form.remember === false, store in sessionStorage
   const register = async (form) => {
     const reg = await AuthAPI.register(form);
     const token = reg?.token;
-    if (token) localStorage.setItem('auth_token', token);
+    try {
+      if (token) {
+        const remember = form?.remember !== false; // default true
+        if (remember) localStorage.setItem('auth_token', token);
+        else sessionStorage.setItem('auth_token', token);
+      }
+    } catch {}
     setUser(reg?.user || null);
     setIsAuthenticated(true);
     return reg?.user;
@@ -89,7 +96,10 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try { await AuthAPI.logout(); } catch {}
-    localStorage.removeItem('auth_token');
+    try {
+      localStorage.removeItem('auth_token');
+      sessionStorage.removeItem('auth_token');
+    } catch {}
     setIsAuthenticated(false);
     setUser(null);
   };

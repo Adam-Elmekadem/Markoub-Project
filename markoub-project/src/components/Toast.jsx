@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { CheckCircle, XCircle, Info, X } from 'lucide-react';
 
-// Presentational toast item
 const ToastItem = ({ message, type = 'success', duration = 3000, onClose }) => {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -84,8 +83,7 @@ export const ToastProvider = ({ children }) => {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      {/* Global viewport - ensure topmost overlay above maps/popups */}
-      <div className="fixed top-5 right-4 md:right-8 z-[9999] flex flex-col gap-3 pointer-events-none">
+      <div className="fixed top-5 right-4 md:right-8 z-9999 flex flex-col gap-3 pointer-events-none">
         {toasts.map((toast) => (
           <div key={toast.id} className="pointer-events-auto">
             <ToastItem

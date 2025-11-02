@@ -88,7 +88,6 @@ export const Profile = () => {
         setAvatarPreview(user?.profile?.avatar_url || null);
       }
     } catch {
-      // Fallback initialization if parsing failed — try to populate first/last where possible
       const fallbackFirst = user?.first_name || user?.profile?.first_name || (user?.name ? (user.name.split(/\s+/)[0] || '') : '');
       const fallbackLast = user?.last_name || user?.profile?.last_name || (user?.name ? (user.name.split(/\s+/).slice(1).join(' ') || '') : '');
       setProfileData({

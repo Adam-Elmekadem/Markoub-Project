@@ -34,6 +34,28 @@
 	cursor: grabbing;
 }
 
+/* Make interactive elements show the pointer cursor by default so it's clear they are clickable.
+   Disabled elements will show the not-allowed cursor. This covers native buttons, common
+   button classes used in the project, and elements with role="button". */
+button,
+input[type="button"],
+input[type="submit"],
+a.button,
+.button,
+.btn,
+[role="button"],
+.icon-button {
+	cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+[disabled],
+.btn[disabled],
+.button[disabled] {
+	cursor: not-allowed;
+}
+
 /* Mobile-only scrollbar hiding (show scrollbars on desktop if desired) */
 @media (max-width: 768px) {
 	.mobile-scroll-hide {
@@ -50,6 +72,24 @@
 .debug-overflow {
   outline: 2px dashed rgba(220, 38, 38, 0.9); /* red dashed */
   background: rgba(220, 38, 38, 0.02); /* subtle tint */
+}
+
+/* Utility to force visible scrollbars on overflowed containers (cross-browser) */
+.force-scrollbar {
+	-ms-overflow-style: auto; /* IE and Edge */
+	scrollbar-width: auto; /* Firefox */
+}
+.force-scrollbar::-webkit-scrollbar {
+	height: 12px;
+	width: 12px;
+}
+.force-scrollbar::-webkit-scrollbar-thumb {
+	background: rgba(100,116,139,0.6); /* slate-600/60% */
+	border-radius: 9999px;
+	border: 2px solid rgba(255,255,255,0.0);
+}
+.force-scrollbar::-webkit-scrollbar-track {
+	background: transparent;
 }
 }
 

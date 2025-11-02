@@ -28,8 +28,11 @@ const BASE_URL =
 
 function getToken() {
   try {
-    const raw = localStorage.getItem('auth_token');
-    return raw || null;
+    // Prefer persistent token in localStorage, fall back to sessionStorage.
+    const rawLocal = localStorage.getItem('auth_token');
+    if (rawLocal) return rawLocal;
+    const rawSession = sessionStorage.getItem('auth_token');
+    return rawSession || null;
   } catch {
     return null;
   }

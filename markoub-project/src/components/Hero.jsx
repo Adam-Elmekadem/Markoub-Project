@@ -75,11 +75,9 @@ export const Hero = () => {
       e && e.preventDefault();
       setIsSearching(true);
       try {
-        // Build normalized params to compare user inputs with DB fields
         const normalizedFrom = (from || '').trim();
         const normalizedTo = (to || '').trim();
         const params = {
-          // include multiple possible param names so backend can match stored fields
           from: normalizedFrom,
           to: normalizedTo,
           from_location: normalizedFrom,
@@ -90,9 +88,7 @@ export const Hero = () => {
           params.ride_date = date;
         }
         const list = await RidesAPI.list(params);
-        // Normalize list to array
         const arr = Array.isArray(list) ? list : (list?.data || []);
-        // Results were returned from the backend (database match)
         setResults(arr || []);
         setShowModal(true);
       } catch (err) {
@@ -129,7 +125,6 @@ export const Hero = () => {
           </div>
         </form>
 
-        {/* Modal */}
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/40" onClick={() => setShowModal(false)} />

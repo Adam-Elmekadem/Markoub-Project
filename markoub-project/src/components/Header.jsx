@@ -25,7 +25,6 @@ export const Header = () => {
     { name: 'Contact', to: '/contact' },
   ];
   
-  // Only add Admin link if user is admin
   const links = user?.role === 'admin' 
     ? [...navLinks, { name: 'Admin', to: '/admin' }]
     : navLinks;
@@ -44,7 +43,6 @@ export const Header = () => {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8">
             {links.map((link) => (
               <div 
@@ -78,7 +76,6 @@ export const Header = () => {
                     {link.name}
                   </a>
                 )}
-                {/* Hover buffer to avoid flicker between trigger and dropdown */}
                 {link.dropdown && activeDropdown === link.name && (
                   <>
                     <div className="absolute top-full left-0 h-2 w-full"></div>
@@ -109,7 +106,6 @@ export const Header = () => {
             ))}
           </div>
 
-          {/* Right Side Actions */}
           <div className="hidden lg:flex items-center space-x-4">
             {isAuthenticated ? (
               <div 
@@ -182,7 +178,6 @@ export const Header = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="lg:hidden p-2 text-gray-700"
@@ -195,7 +190,6 @@ export const Header = () => {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="lg:hidden mt-4 pb-4 border-t pt-4">
             <div className="flex flex-col space-y-4">

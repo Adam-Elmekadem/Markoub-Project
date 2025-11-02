@@ -1,9 +1,21 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import AdminLayout from '../pages/admin/AdminLayout';
+import { Spinner } from './Spinner';
 
 export const AdminRoute = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isAuthLoading } = useAuth();
+
+  
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="p-6 bg-white rounded-2xl shadow-md">
+          <Spinner size={8} color="blue" />
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: '/admin' }} replace />;

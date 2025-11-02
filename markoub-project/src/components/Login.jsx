@@ -14,6 +14,7 @@ export const Login = () => {
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [remember, setRemember] = useState(true);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -42,7 +43,7 @@ export const Login = () => {
     if (!validate()) return;
     try {
       setIsSubmitting(true);
-      await login({ email: formData.email, password: formData.password });
+      await login({ email: formData.email, password: formData.password, remember });
       showToast('Welcome back!', 'success');
       const redirectTo = location.state?.from || '/';
       navigate(redirectTo, { replace: true });
@@ -56,7 +57,7 @@ export const Login = () => {
   const handleGoogle = async () => {
     try {
       setIsSubmitting(true);
-      await login({ email: 'user@gmail.com', password: 'oauth', name: 'Google User' });
+      await login({ email: 'user@gmail.com', password: 'oauth', name: 'Google User', remember });
       showToast('Successfully signed in with Google!', 'success');
       const redirectTo = location.state?.from || '/';
       navigate(redirectTo, { replace: true });
@@ -70,7 +71,7 @@ export const Login = () => {
   const handleGithub = async () => {
     try {
       setIsSubmitting(true);
-      await login({ email: 'user@github.com', password: 'oauth', name: 'GitHub User' });
+      await login({ email: 'user@github.com', password: 'oauth', name: 'GitHub User', remember });
       showToast('Successfully signed in with GitHub!', 'success');
       const redirectTo = location.state?.from || '/';
       navigate(redirectTo, { replace: true });
@@ -184,6 +185,14 @@ export const Login = () => {
                   'Log In'
                 )}
               </button>
+
+              <div className="flex items-center justify-between text-sm mt-3">
+                <label className="inline-flex items-center gap-2">
+                  <input type="checkbox" className="form-checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+                  <span>Remember me</span>
+                </label>
+                <a href="#" className="text-blue-700 hover:underline">Forgot password?</a>
+              </div>
             </form>
           </div>
         </div>

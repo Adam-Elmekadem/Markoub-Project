@@ -224,8 +224,9 @@ export const Blogs = () => {
           <p className="text-slate-500">Loading blogs...</p>
         </div>
       ) : (
-      <div ref={wrapperRef} className="-mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto rounded-xl border border-slate-200 no-scrollbar touch-scroll">
-        <table className="w-full table-auto divide-y divide-slate-200">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-slate-200">
+        <div ref={wrapperRef} className="overflow-x-auto force-scrollbar touch-scroll max-w-full px-4 sm:px-0">
+          <table className="w-full table-auto divide-y divide-slate-200">
           <thead className="bg-slate-100">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Title</th>
@@ -278,7 +279,8 @@ export const Blogs = () => {
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
       )}
 

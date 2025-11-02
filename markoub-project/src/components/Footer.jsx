@@ -14,7 +14,6 @@ export const Footer = () => {
     <footer id="contact" className="bg-blue-700 text-white">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          {/* Quick Links */}
           <div>
             <h4 className="text-lg font-bold mb-4">Quick Links</h4>
             <ul className="space-y-2">
@@ -26,7 +25,6 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Our Socials */}
           <div>
             <h4 className="text-lg font-bold mb-4">Our Socials</h4>
             <ul className="space-y-2">
@@ -38,7 +36,6 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Address & Contact */}
           <div>
             <h4 className="text-lg font-bold mb-4">Adress & contact</h4>
             <ul className="space-y-2">
@@ -57,7 +54,6 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Partners */}
           <div>
             <h4 className="text-lg font-bold mb-4">Partners</h4>
             <ul className="space-y-2">
@@ -88,14 +84,13 @@ export const Footer = () => {
           </form>
         </div>
 
-        {/* Bottom Bar */}
         <div className="border-t-2 border-white pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
           <div>
             <a href="#" className="hover:text-orange-300 transition-colors mr-6">Privacy Policy</a>
             <a href="#" className="hover:text-orange-300 transition-colors">Terms of Service</a>
           </div>
           <div>
-            © 2024 NetProust. All rights reserved.
+            © 2025 AdamELmekadem. All rights reserved.
           </div>
         </div>
       </div>

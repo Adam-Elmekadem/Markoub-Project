@@ -9,7 +9,7 @@ export const Brands = () => {
     { name: 'Samsung', text: 'SAMSUNG' },
     { name: 'Versace', text: 'VERSACE' },
   ];
-  // Convert brands into a small testimonial-style grid to feel more human
+
   const testimonials = [
     { name: 'Amina', role: 'Student — Casablanca', quote: 'Saved 40% on my daily commute and met great people.' },
     { name: 'Youssef', role: 'Developer — Rabat', quote: 'Easy to use and drivers are reliable.' },
