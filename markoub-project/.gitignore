@@ -22,3 +22,21 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+## Local environment files (do NOT commit)
+.env
+.env.local
+.env.*
+!.env.example
+
+## Build / cache / runtime
+.vite
+.cache
+.parcel-cache
+coverage/
+/.pnp
+/.pnp.js
+
+## OS files
+Thumbs.db
+ehthumbs.db
