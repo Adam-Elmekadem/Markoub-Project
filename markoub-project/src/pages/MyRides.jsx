@@ -42,7 +42,8 @@ export const MyRides = () => {
           time: r.ride_time,
           seats: r.seats_available,
           price: r.price_per_seat,
-          vehicle: r.vehicle_model ? { model: r.vehicle_model, number: r.vehicle_number } : null,
+            // Use nested vehicle resource only; normalize number_plate across shapes
+            vehicle: r.vehicle ? { model: r.vehicle.model || '', number_plate: r.vehicle.number_plate || r.vehicle.number || r.vehicle_number || r.vehicle_number_plate || '' } : null,
           status: r.status || r.ride_status || 'upcoming',
           driver_id: r.driver_id || r.driver?.id || null,
         }));
@@ -74,7 +75,6 @@ export const MyRides = () => {
 
     load();
 
-    // load saved ratings (local key: my_ride_ratings)
     try {
       const store = JSON.parse(localStorage.getItem('my_ride_ratings') || '{}');
       setRatings(store);
@@ -115,7 +115,7 @@ export const MyRides = () => {
         time: r.ride_time,
         seats: r.seats_available,
         price: r.price_per_seat,
-        vehicle: r.vehicle_model ? { model: r.vehicle_model, number: r.vehicle_number } : null,
+        vehicle: (r.vehicle?.model || r.vehicle_model) ? { model: r.vehicle?.model || r.vehicle_model || '', number_plate: r.vehicle?.number_plate || r.vehicle?.number || r.vehicle_number || r.vehicle_number_plate || '' } : null,
         status: r.status || r.ride_status || 'upcoming',
         driver_id: r.driver_id || r.driver?.id || null,
       }));
@@ -149,7 +149,6 @@ export const MyRides = () => {
     try {
       await RidesAPI.update(rideId, { status: newStatus });
 
-      // Optimistically update local state so the Kanban immediately reflects the change
       setRides(prev => {
         if (!prev) return prev;
         const offered = (prev.offered || []).map(r => (r.id === rideId ? { ...r, status: newStatus } : r));
@@ -158,7 +157,6 @@ export const MyRides = () => {
 
       showToast(`Ride marked as ${newStatus}`, 'success');
 
-      // Refresh lists in background to reconcile server state (don't block UI)
       refreshLists().catch(err => console.warn('Background refresh failed', err));
     } catch (err) {
       console.error('Failed to update ride status', err);
@@ -168,7 +166,6 @@ export const MyRides = () => {
     }
   }
 
-  // Local UI helpers to start/finish ride inside the Kanban and briefly highlight the moved card
   const [highlightedRide, setHighlightedRide] = useState(null);
   const startRide = async (rideId) => {
     try {
@@ -186,7 +183,7 @@ export const MyRides = () => {
       setHighlightedRide({ id: rideId, status: 'done' });
       setTimeout(() => setHighlightedRide(null), 4000);
     } catch (e) {
-      // handled in markRideStatus
+      console.error('Failed to finish ride', e);
     }
   };
 
@@ -203,19 +200,15 @@ export const MyRides = () => {
     }
   }
 
-  // Parse the ride date and time into a Date object (best-effort).
   const parseRideDateTime = (dateStr, timeStr) => {
     if (!dateStr) return null;
     try {
-      // Try a robust manual parse to avoid timezone quirks.
-      // Expected dateStr formats: YYYY-MM-DD or YYYY/MM/DD
-      // Expected timeStr formats: HH:mm, H:mm, HH:mm:ss, or with AM/PM like 2:30 PM
+      
       const dateMatch = String(dateStr).trim().match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
       let hour = 0, minute = 0, second = 0;
 
       if (timeStr) {
         const t = String(timeStr).trim();
-        // Match HH:MM(:SS)? with optional AM/PM
         const tm = t.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?/i);
         if (tm) {
           hour = parseInt(tm[1], 10);
@@ -238,7 +231,6 @@ export const MyRides = () => {
         if (!isNaN(constructed)) return constructed;
       }
 
-      // Last resort: try Date parsing of an ISO-like string
       const iso = timeStr ? `${dateStr}T${timeStr}` : dateStr;
       const parsed = new Date(iso);
       if (!isNaN(parsed)) return parsed;
@@ -248,16 +240,13 @@ export const MyRides = () => {
     }
   };
 
-  // Only allow starting a ride when the current time is at or after the scheduled date/time.
-  // Allow starting a ride within a small pre-start window before scheduled departure (for testing).
-  // If no valid scheduled time is available, we fall back to allowing the action so it doesn't block the driver.
+  
   const PRE_START_MINUTES = 5; // change this to 3 for 3 minutes, 5 for 5 minutes, etc.
   const canStartRide = (ride) => {
     const scheduled = parseRideDateTime(ride.date, ride.time);
     const now = new Date();
     const windowStart = scheduled ? new Date(scheduled.getTime() - PRE_START_MINUTES * 60 * 1000) : null;
 
-    // Debug: print scheduling info to browser console for troubleshooting
     try {
       const scheduledISO = scheduled ? scheduled.toISOString() : 'invalid';
       const windowStartISO = windowStart ? windowStart.toISOString() : 'n/a';
@@ -265,14 +254,13 @@ export const MyRides = () => {
       const canStart = scheduled ? (now.getTime() >= windowStart.getTime()) : true;
       console.log(`[MyRides] ride=${ride?.id} scheduled=${scheduledISO} startWindow=${windowStartISO} now=${nowISO} preStartMin=${PRE_START_MINUTES} canStart=${canStart}`);
     } catch (e) {
-      // ignore logging errors
+      console.warn('Failed to log ride start timing info', e);
     }
 
     if (!scheduled) return true;
     return now.getTime() >= windowStart.getTime();
   };
 
-  // (removed temporary debug-only logging for cleaner UI)
 
   if (isAuthLoading) {
     return (
@@ -331,8 +319,6 @@ export const MyRides = () => {
           </div>
         </div>
 
-        {/* All Rides Section */}
-              {/* Offered Rides as a Kanban board (Planned / In Road / Finished) */}
               <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
                 <h2 className="text-2xl font-bold text-blue-700 mb-6 flex items-center gap-2">
                   <Car className="w-6 h-6" />
@@ -341,7 +327,6 @@ export const MyRides = () => {
 
                 <div className="grid gap-4 md:grid-cols-3">
                   {(() => {
-                    // Group rides by status
                     const planned = (rides.offered || []).filter(r => !r.status || ['upcoming', 'active', 'planned'].includes(String(r.status).toLowerCase()));
                     const inRoad = (rides.offered || []).filter(r => String(r.status).toLowerCase() === 'in_road');
                     const finished = (rides.offered || []).filter(r => String(r.status).toLowerCase() === 'done');
@@ -380,7 +365,7 @@ export const MyRides = () => {
                               </div>
 
                               {ride.vehicle && (
-                                <div className="pt-3 text-sm text-slate-600">{ride.vehicle.model} — {ride.vehicle.number}</div>
+                                <div className="pt-3 text-sm text-slate-600">{ride.vehicle.model} — {ride.vehicle.number_plate}</div>
                               )}
 
                               <div className="pt-4 flex items-center gap-2">
