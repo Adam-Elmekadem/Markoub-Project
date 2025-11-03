@@ -17,14 +17,19 @@ class BookingController extends Controller
     public function index()
     {
         // Return bookings for authenticated user (passenger)
-        $bookings = Booking::with(['ride.driver.profile'])
+        $bookings = Booking::with(['ride.driver.profile', 'ride.vehicle', 'passenger.profile', 'passenger.vehicles'])
             ->where('user_id', auth('api')->id())
             ->latest()
             ->paginate(20);
 
         return response()->json([
             'success' => true,
-            'data' => $bookings,
+            'data' => \App\Http\Resources\BookingResource::collection($bookings),
+            'meta' => [
+                'total' => $bookings->total(),
+                'per_page' => $bookings->perPage(),
+                'current_page' => $bookings->currentPage(),
+            ],
         ]);
     }
 
@@ -91,7 +96,7 @@ class BookingController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Booking created',
-                'data' => $booking->load('ride'),
+                'data' => new \App\Http\Resources\BookingResource($booking->load('ride.driver.profile','ride.vehicle','passenger.profile','passenger.vehicles')),
             ], 201);
         });
     }
@@ -101,14 +106,14 @@ class BookingController extends Controller
      */
     public function show(string $id)
     {
-        $booking = Booking::with(['ride.driver.profile', 'passenger'])->findOrFail($id);
+    $booking = Booking::with(['ride.driver.profile','ride.vehicle', 'passenger.profile', 'passenger.vehicles'])->findOrFail($id);
         // Ensure user owns the booking or is driver of the ride
         $userId = auth('api')->id();
         if ($booking->user_id !== $userId && $booking->ride->driver_id !== $userId) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
-        return response()->json(['success' => true, 'data' => $booking]);
+    return response()->json(['success' => true, 'data' => new \App\Http\Resources\BookingResource($booking)]);
     }
 
     /**
@@ -146,7 +151,7 @@ class BookingController extends Controller
 
         $booking->update($data);
 
-        return response()->json(['success' => true, 'message' => 'Booking updated', 'data' => $booking]);
+    return response()->json(['success' => true, 'message' => 'Booking updated', 'data' => new \App\Http\Resources\BookingResource($booking->load('ride.driver.profile','ride.vehicle','passenger.profile','passenger.vehicles'))]);
     }
 
     /**

@@ -85,7 +85,8 @@ const RidesCardList = ({ rides, onEdit, onDelete, onView }) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
     {rides.map((r, idx) => {
       const driver = formatDriverName(r.driver);
-      const vehicle = r.vehicle_model || r.vehicle || r.vehicle_number || '-';
+  // Use the explicitly linked vehicle only
+  const vehicle = r.vehicle ? (r.vehicle.model || r.vehicle.number || '-') : '-';
       const from = r.from_location || r.from || r.pickup || '-';
       const to = r.to_location || r.to || r.dropoff || '-';
       const date = r.ride_date || r.date || '-';
@@ -255,7 +256,7 @@ export const Rides = () => {
                 <div className="text-orange-600 font-medium">{selectedRide.from_location || selectedRide.from || selectedRide.pickup || '-'}</div>
                 <div className="mt-2 font-medium text-slate-600">To</div>
                 <div className="text-orange-600 font-medium">{selectedRide.to_location || selectedRide.to || selectedRide.dropoff || '-'}</div>
-                <div className="mt-2"><span className="font-medium text-slate-600">Vehicle: </span>{selectedRide.vehicle_model || selectedRide.vehicle || '-'}</div>
+                <div className="mt-2"><span className="font-medium text-slate-600">Vehicle: </span>{selectedRide.vehicle?.model || selectedRide.vehicle?.number || '-'}</div>
               </div>
               <div>
                 <div><span className="font-medium text-slate-600">Date / Time: </span>{selectedRide.ride_date || selectedRide.date || '-'} {selectedRide.ride_time || selectedRide.time || ''}</div>

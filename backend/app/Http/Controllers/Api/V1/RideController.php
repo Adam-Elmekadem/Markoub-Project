@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\RideResource;
 use App\Models\Ride;
+use App\Models\Vehicle;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,7 +16,7 @@ class RideController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Ride::with(['driver.profile', 'bookings'])
+        $query = Ride::with(['driver.profile', 'driver.vehicles', 'bookings.passenger.profile', 'vehicle'])
             ->available()
             ->upcoming();
         // Filter by location
@@ -41,9 +42,11 @@ class RideController extends Controller
             $query->where('ride_type', $request->ride_type);
         }
 
-        // Filter by vehicle model
+        // Filter by vehicle model (use vehicles table)
         if ($request->filled('vehicle_model')) {
-            $query->where('vehicle_model', 'like', '%' . $request->vehicle_model . '%');
+            $query->whereHas('vehicle', function ($q) use ($request) {
+                $q->where('model', 'like', '%' . $request->vehicle_model . '%');
+            });
         }
 
         // Filter by price range
@@ -117,10 +120,52 @@ class RideController extends Controller
             'allow_music' => 'boolean',
         ]);
 
+        // Extract vehicle-related inputs so we don't persist legacy flat fields on the rides table
+        $vehicleModel = $request->input('vehicle_model');
+        $vehicleNumber = $request->input('vehicle_number');
+        $vehicleColor = $request->input('vehicle_color');
+        $vehicleYear = $request->input('vehicle_year');
+
+        // Remove vehicle_* from the data used to create the ride itself
+        unset($validated['vehicle_model'], $validated['vehicle_number']);
+
         $validated['driver_id'] = auth('api')->id();
         $validated['status'] = 'active';
 
         $ride = Ride::create($validated);
+
+        // Attempt to associate a Vehicle to the ride when possible (best-effort):
+        try {
+            $userId = auth('api')->id();
+            if (!empty($vehicleNumber)) {
+                $plate = $vehicleNumber;
+                $veh = Vehicle::where('number_plate', $plate)->first();
+                if (!$veh) {
+                    $veh = Vehicle::create([
+                        'user_id' => $userId,
+                        'model' => $vehicleModel ?? null,
+                        'color' => $vehicleColor ?? null,
+                        'year' => $vehicleYear ?? null,
+                        'number_plate' => $plate,
+                        'is_verified' => 0,
+                    ]);
+                }
+                if ($veh) {
+                    $ride->vehicle_id = $veh->id;
+                    $ride->save();
+                }
+            } else {
+                // No plate provided; try to use driver's existing vehicles
+                $firstVeh = Vehicle::where('user_id', $userId)->orderByDesc('is_verified')->first();
+                if ($firstVeh) {
+                    $ride->vehicle_id = $firstVeh->id;
+                    $ride->save();
+                }
+            }
+        } catch (\Throwable $e) {
+            // Don't block ride creation for vehicle association failures; log and continue
+            logger()->error('Failed to associate vehicle to ride: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
@@ -134,7 +179,7 @@ class RideController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        $ride = Ride::with(['driver.profile', 'bookings', 'comments.user'])->findOrFail($id);
+    $ride = Ride::with(['driver.profile', 'driver.vehicles', 'bookings.passenger.profile', 'comments.user', 'vehicle'])->findOrFail($id);
 
         return response()->json([
             'success' => true,
@@ -211,7 +256,7 @@ class RideController extends Controller
     {
         $rides = Ride::where('driver_id', auth('api')->id())
             // ensure the driver relation is loaded so resources include driver info
-            ->with(['bookings.passenger', 'driver.profile'])
+            ->with(['bookings.passenger.profile', 'driver.profile', 'driver.vehicles', 'vehicle'])
             ->latest()
             ->paginate(15);
 

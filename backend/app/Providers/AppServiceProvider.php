@@ -25,5 +25,12 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
+
+        // Register console commands (Laravel 12 app skeleton does not include Console\Kernel)
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \App\Console\Commands\SmokeTestCommand::class,
+            ]);
+        }
     }
 }

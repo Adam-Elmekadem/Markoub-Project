@@ -33,6 +33,8 @@ export const Profile = () => {
   const [rides, setRides] = useState({ offered: [], reserved: [] });
   const [isLoadingRides, setIsLoadingRides] = useState(true);
   const [actionLoading, setActionLoading] = useState({ id: null, type: null });
+  const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
+  const [vehicleForm, setVehicleForm] = useState({ model: '', number_plate: '', color: '', year: '' });
 
   // Small inline spinner used for buttons and loading placeholders
   const Spinner = ({ className = '' }) => (
@@ -80,10 +82,11 @@ export const Profile = () => {
           city: user?.profile?.city || '',
           bio: user?.profile?.bio || '',
           driver_license_number: user?.profile?.driver_license_number || '',
-          vehicle_model: user?.profile?.vehicle_model || '',
-          vehicle_number_plate: user?.profile?.vehicle_number_plate || user?.profile?.vehicle_number || '',
-          vehicle_color: user?.profile?.vehicle_color || '',
-          vehicle_year: user?.profile?.vehicle_year || ''
+          // Prefer new vehicles relation but fall back to legacy profile fields
+          vehicle_model: user?.profile?.vehicle_model || user?.vehicles?.[0]?.model || '',
+          vehicle_number_plate: user?.profile?.vehicle_number_plate || user?.profile?.vehicle_number || user?.vehicles?.[0]?.number_plate || user?.vehicles?.[0]?.number || '',
+          vehicle_color: user?.profile?.vehicle_color || user?.vehicles?.[0]?.color || '',
+          vehicle_year: user?.profile?.vehicle_year || user?.vehicles?.[0]?.year || ''
         });
         setAvatarPreview(user?.profile?.avatar_url || null);
       }
@@ -98,10 +101,10 @@ export const Profile = () => {
         city: user?.profile?.city || '',
         bio: user?.profile?.bio || '',
         driver_license_number: user?.profile?.driver_license_number || '',
-        vehicle_model: user?.profile?.vehicle_model || '',
-        vehicle_number_plate: user?.profile?.vehicle_number_plate || user?.profile?.vehicle_number || '',
-        vehicle_color: user?.profile?.vehicle_color || '',
-        vehicle_year: user?.profile?.vehicle_year || ''
+        vehicle_model: user?.profile?.vehicle_model || user?.vehicles?.[0]?.model || '',
+        vehicle_number_plate: user?.profile?.vehicle_number_plate || user?.profile?.vehicle_number || user?.vehicles?.[0]?.number_plate || user?.vehicles?.[0]?.number || '',
+        vehicle_color: user?.profile?.vehicle_color || user?.vehicles?.[0]?.color || '',
+        vehicle_year: user?.profile?.vehicle_year || user?.vehicles?.[0]?.year || ''
       });
     }
 
@@ -130,9 +133,9 @@ export const Profile = () => {
             time: r.ride_time || r.time || '',
             seats: r.seats_available ?? r.seats ?? 0,
             price: r.price_per_seat ?? r.price ?? 0,
-            vehicle: {
-              model: r.vehicle_model || (r.vehicle?.model ?? ''),
-              number: r.vehicle_number || (r.vehicle?.number ?? ''),
+              vehicle: {
+              model: r.vehicle?.model ?? '',
+              number: r.vehicle?.number ?? '',
             },
               bookings: Array.isArray(r.bookings || []) ? (r.bookings || []).map(b => ({
               status: b.status,
@@ -284,8 +287,8 @@ export const Profile = () => {
           seats: r.seats_available ?? r.seats ?? 0,
           price: r.price_per_seat ?? r.price ?? 0,
           vehicle: {
-            model: r.vehicle_model || (r.vehicle?.model ?? ''),
-            number: r.vehicle_number || (r.vehicle?.number ?? ''),
+            model: r.vehicle?.model ?? '',
+            number: r.vehicle?.number ?? '',
           },
         }));
 
@@ -439,8 +442,8 @@ export const Profile = () => {
           seats: r.seats_available ?? r.seats ?? 0,
           price: r.price_per_seat ?? r.price ?? 0,
           vehicle: {
-            model: r.vehicle_model || (r.vehicle?.model ?? ''),
-            number: r.vehicle_number || (r.vehicle?.number ?? ''),
+            model: r.vehicle?.model ?? '',
+            number: r.vehicle?.number ?? '',
           },
         }));
 
@@ -530,8 +533,8 @@ export const Profile = () => {
           seats: r.seats_available ?? r.seats ?? 0,
           price: r.price_per_seat ?? r.price ?? 0,
           vehicle: {
-            model: r.vehicle_model || (r.vehicle?.model ?? ''),
-            number: r.vehicle_number || (r.vehicle?.number ?? ''),
+            model: r.vehicle?.model ?? '',
+            number: r.vehicle?.number ?? '',
           },
           bookings: Array.isArray(r.bookings || []) ? (r.bookings || []).map(b => ({
             booking_id: b.id,
@@ -596,8 +599,8 @@ export const Profile = () => {
           seats: r.seats_available ?? r.seats ?? 0,
           price: r.price_per_seat ?? r.price ?? 0,
           vehicle: {
-            model: r.vehicle_model || (r.vehicle?.model ?? ''),
-            number: r.vehicle_number || (r.vehicle?.number ?? ''),
+            model: r.vehicle?.model ?? '',
+            number: r.vehicle?.number ?? '',
           },
           bookings: Array.isArray(r.bookings || []) ? (r.bookings || []).map(b => ({
             booking_id: b.id,
@@ -660,10 +663,7 @@ export const Profile = () => {
           time: r.ride_time || r.time || '',
           seats: r.seats_available ?? r.seats ?? 0,
           price: r.price_per_seat ?? r.price ?? 0,
-          vehicle: {
-            model: r.vehicle_model || (r.vehicle?.model ?? ''),
-            number: r.vehicle_number || (r.vehicle?.number ?? ''),
-          },
+          vehicle: r.vehicle ? { model: r.vehicle.model || '', number: r.vehicle.number || '' } : null,
           bookings: Array.isArray(r.bookings || []) ? (r.bookings || []).map(b => ({
             booking_id: b.id,
             passenger_name: (b.passenger?.first_name || '') + (b.passenger?.last_name ? ` ${b.passenger.last_name}` : ''),
@@ -767,8 +767,7 @@ export const Profile = () => {
 
         {/* Content */}
         <div className="max-w-6xl mx-auto">
-          {/* Personal Info Tab */
-          }
+          {/* Personal Info Tab */}
           {activeTab === 'info' && (
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
               {/* Header with Edit Button */}
@@ -937,110 +936,121 @@ export const Profile = () => {
                   />
                 </div>
               </div>
-                {/* Vehicle Section: show existing vehicle info for drivers, otherwise allow passengers to add vehicle details */}
+                {/* Vehicle Section: show existing vehicle info; editing is via modal */}
                 <div className="mt-8 border-t border-slate-200 pt-6">
                   <h3 className="text-xl font-semibold text-blue-700 mb-4">Vehicle Details</h3>
-                  {user?.profile?.driver_license_number ? (
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-semibold text-blue-700 mb-2">Vehicle Model</label>
-                        <div className="flex items-center gap-2 text-slate-700">
-                          <Car className="w-5 h-5 text-slate-400" />
-                          <span>{user?.profile?.vehicle_model || '—'}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-blue-700 mb-2">License Plate</label>
-                        <div className="flex items-center gap-2 text-slate-700">
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-slate-100 text-slate-600 text-xs font-semibold">#</span>
-                          <span>{user?.profile?.vehicle_number_plate || '—'}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-blue-700 mb-2">Vehicle Color</label>
-                        <div className="flex items-center gap-2 text-slate-700">
-                          <Palette className="w-5 h-5 text-slate-400" />
-                          <span>{user?.profile?.vehicle_color || '—'}</span>
-                          {user?.profile?.vehicle_color && (
-                            <span
-                              className="inline-block w-4 h-4 rounded-full border border-slate-300"
-                              style={{ backgroundColor: (user?.profile?.vehicle_color || '').toLowerCase() }}
-                            />
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-blue-700 mb-2">Vehicle Year</label>
-                        <div className="flex items-center gap-2 text-slate-700">
-                          <span>{user?.profile?.vehicle_year || '—'}</span>
-                        </div>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-blue-700 mb-2">Vehicle Model</label>
+                      <div className="flex items-center gap-2 text-slate-700">
+                        <Car className="w-5 h-5 text-slate-400" />
+                        <span>{user?.vehicles?.[0]?.model || user?.profile?.vehicle_model || '—'}</span>
                       </div>
                     </div>
-                  ) : (
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-semibold text-blue-700 mb-2">Driver License Number</label>
-                        <input
-                          type="text"
-                          value={profileData.driver_license_number}
-                          onChange={(e) => updateField('driver_license_number', e.target.value)}
-                          placeholder="e.g. D1234567"
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-blue-700 mb-2">Vehicle Model</label>
-                        <input
-                          type="text"
-                          value={profileData.vehicle_model}
-                          onChange={(e) => updateField('vehicle_model', e.target.value)}
-                          placeholder="Toyota Camry"
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-blue-700 mb-2">License Plate</label>
-                        <input
-                          type="text"
-                          value={profileData.vehicle_number_plate}
-                          onChange={(e) => updateField('vehicle_number_plate', e.target.value)}
-                          placeholder="ABC123"
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-blue-700 mb-2">Vehicle Color</label>
-                        <input
-                          type="text"
-                          value={profileData.vehicle_color}
-                          onChange={(e) => updateField('vehicle_color', e.target.value)}
-                          placeholder="Blue"
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-blue-700 mb-2">Vehicle Year</label>
-                        <input
-                          type="text"
-                          value={profileData.vehicle_year}
-                          onChange={(e) => updateField('vehicle_year', e.target.value)}
-                          placeholder="2020"
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
 
-                      <div className="md:col-span-2 flex items-center gap-3">
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <label className="block text-sm font-semibold text-blue-700 mb-2">License Plate</label>
                         <button
-                          onClick={handleSave}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                          type="button"
+                          onClick={() => {
+                            // populate vehicleForm from current data and open modal
+                            setVehicleForm({
+                              model: user?.vehicles?.[0]?.model || user?.profile?.vehicle_model || '',
+                              number_plate: user?.vehicles?.[0]?.number_plate || user?.profile?.vehicle_number_plate || user?.profile?.vehicle_number || '',
+                              color: user?.vehicles?.[0]?.color || user?.profile?.vehicle_color || '',
+                              year: user?.vehicles?.[0]?.year || user?.profile?.vehicle_year || ''
+                            });
+                            setVehicleModalOpen(true);
+                          }}
+                          className="text-sm text-blue-700 hover:underline"
                         >
-                          Save Vehicle Details
+                          Edit Vehicle
                         </button>
-                        <p className="text-sm text-slate-500">Adding vehicle details will allow you to offer rides.</p>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-700">
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-slate-100 text-slate-600 text-xs font-semibold">#</span>
+                        <span>{user?.vehicles?.[0]?.number_plate || user?.profile?.vehicle_number_plate || user?.vehicles?.[0]?.number || '—'}</span>
                       </div>
                     </div>
-                  )}
+
+                    <div>
+                      <label className="block text-sm font-semibold text-blue-700 mb-2">Vehicle Color</label>
+                      <div className="flex items-center gap-2 text-slate-700">
+                        <Palette className="w-5 h-5 text-slate-400" />
+                        <span>{user?.vehicles?.[0]?.color || user?.profile?.vehicle_color || '—'}</span>
+                        {(user?.vehicles?.[0]?.color || user?.profile?.vehicle_color) && (
+                          <span
+                            className="inline-block w-4 h-4 rounded-full border border-slate-300"
+                            style={{ backgroundColor: ((user?.vehicles?.[0]?.color || user?.profile?.vehicle_color) || '').toLowerCase() }}
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-blue-700 mb-2">Vehicle Year</label>
+                      <div className="flex items-center gap-2 text-slate-700">
+                        <span>{user?.vehicles?.[0]?.year || user?.profile?.vehicle_year || '—'}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+
+          {/* Vehicle Edit Modal */}
+          {vehicleModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black opacity-40" onClick={() => setVehicleModalOpen(false)} />
+              <div className="bg-white rounded-xl shadow-xl p-6 z-10 w-full max-w-lg">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Edit Vehicle</h3>
+                  <button onClick={() => setVehicleModalOpen(false)} className="text-slate-500 hover:text-slate-700">Close</button>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Model</label>
+                    <input value={vehicleForm.model} onChange={(e) => setVehicleForm(v => ({ ...v, model: e.target.value }))} className="w-full px-3 py-2 border rounded" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">License Plate</label>
+                    <input value={vehicleForm.number_plate} onChange={(e) => setVehicleForm(v => ({ ...v, number_plate: e.target.value }))} className="w-full px-3 py-2 border rounded" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Color</label>
+                    <input value={vehicleForm.color} onChange={(e) => setVehicleForm(v => ({ ...v, color: e.target.value }))} className="w-full px-3 py-2 border rounded" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Year</label>
+                    <input value={vehicleForm.year} onChange={(e) => setVehicleForm(v => ({ ...v, year: e.target.value }))} className="w-full px-3 py-2 border rounded" />
+                  </div>
+                </div>
+                <div className="mt-4 flex justify-end gap-3">
+                  <button onClick={() => setVehicleModalOpen(false)} className="px-4 py-2 rounded bg-slate-200 hover:bg-slate-300">Cancel</button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const payload = {
+                          vehicle_model: vehicleForm.model || undefined,
+                          vehicle_number_plate: vehicleForm.number_plate || undefined,
+                          vehicle_color: vehicleForm.color || undefined,
+                          vehicle_year: vehicleForm.year || undefined,
+                        };
+                        await updateProfile(payload);
+                        showToast('Vehicle updated', 'success');
+                        setVehicleModalOpen(false);
+                      } catch (err) {
+                        console.error('Failed updating vehicle', err);
+                        showToast('Failed updating vehicle', 'error');
+                      }
+                    }}
+                    className="px-4 py-2 rounded bg-blue-700 text-white hover:bg-blue-800"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
             </div>
           )}
 

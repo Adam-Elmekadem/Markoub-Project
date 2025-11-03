@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\VehicleResource;
 
 class UserResource extends JsonResource
 {
@@ -27,6 +28,7 @@ class UserResource extends JsonResource
             'is_verified' => $this->is_verified,
             'email_verified_at' => $this->email_verified_at,
             'profile' => new ProfileResource($this->whenLoaded('profile')),
+            'vehicles' => VehicleResource::collection($this->whenLoaded('vehicles')),
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
         ];

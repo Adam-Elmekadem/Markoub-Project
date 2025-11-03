@@ -4,6 +4,8 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\VehicleResource;
+use App\Models\Vehicle;
 
 class RideResource extends JsonResource
 {
@@ -28,8 +30,20 @@ class RideResource extends JsonResource
             'ride_date' => $this->ride_date?->format('Y-m-d'),
             'ride_time' => $this->ride_time,
             'ride_type' => $this->ride_type,
-            'vehicle_model' => $this->vehicle_model,
-            'vehicle_number' => $this->vehicle_number,
+            // Prefer an explicitly linked vehicle, fall back to the driver's first vehicle when available.
+            'vehicle' => new VehicleResource(
+                $this->when(
+                    true,
+                    // If vehicle relation is loaded or exists, use it; otherwise try to resolve by driver
+                    $this->vehicle ?? (
+                        // If driver relation is loaded and vehicles are eager, use first
+                        ($this->relationLoaded('driver') && isset($this->driver->vehicles) && count($this->driver->vehicles) ? $this->driver->vehicles->first() : (
+                            // Last resort: query the DB for a vehicle owned by the driver
+                            ($this->driver_id ? \App\Models\Vehicle::where('user_id', $this->driver_id)->orderByDesc('is_verified')->first() : null)
+                        ))
+                    )
+                )
+            ),
             'seats_available' => $this->seats_available,
             'remaining_seats' => $this->remaining_seats,
             'price_per_seat' => (float) $this->price_per_seat,

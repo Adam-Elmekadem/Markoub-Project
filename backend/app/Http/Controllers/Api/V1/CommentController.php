@@ -14,11 +14,19 @@ class CommentController extends Controller
     {
         // Return paginated comments for admin listing with related user and ride
         $perPage = request()->query('per_page', 20);
-        $comments = \App\Models\Comment::with(['user:id,first_name,last_name,email', 'ride:id,from,to,date'])
+        $comments = \App\Models\Comment::with(['user.profile','user.vehicles','ride','ride.vehicle'])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
-        return response()->json($comments);
+        return response()->json([
+            'success' => true,
+            'data' => \App\Http\Resources\CommentResource::collection($comments),
+            'meta' => [
+                'total' => $comments->total(),
+                'per_page' => $comments->perPage(),
+                'current_page' => $comments->currentPage(),
+            ],
+        ]);
     }
 
     /**

@@ -102,7 +102,9 @@ export const AuthAPI = {
     if (form.isDriver) {
       payload.license_number = form.licenseNumber;
       payload.vehicle_model = form.vehicleModel;
+      // send both keys to be compatible with backends expecting either name
       payload.vehicle_number = form.vehicleNumber;
+      payload.vehicle_number_plate = form.vehicleNumber;
       if (form.vehicleColor) payload.vehicle_color = form.vehicleColor;
       if (form.vehicleYear) payload.vehicle_year = form.vehicleYear;
     }

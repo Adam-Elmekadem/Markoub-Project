@@ -60,7 +60,8 @@ export const FindRide = () => {
           trips: 0,
           gender: genderNorm,
           displayGender,
-          vehicle: r.vehicle_model || 'Vehicle',
+              // Prefer nested vehicle resource when available
+              vehicle: r.vehicle?.model || 'Vehicle',
           verified: !!r.driver?.profile?.is_driver_verified,
         };
       })(),

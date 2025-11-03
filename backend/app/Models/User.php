@@ -126,6 +126,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasOne(Profile::class);
     }
 
+    public function vehicles()
+    {
+        return $this->hasMany(Vehicle::class);
+    }
+
     public function offeredRides()
     {
         return $this->hasMany(Ride::class, 'driver_id');

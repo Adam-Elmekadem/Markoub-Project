@@ -16,7 +16,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $perPage = (int) $request->query('per_page', 20);
-        $query = User::query()->select('id', 'first_name', 'last_name', 'email', 'phone', 'city', 'role', 'is_verified', 'created_at');
+    $query = User::with(['profile', 'vehicles'])->select('id', 'first_name', 'last_name', 'email', 'phone', 'city', 'role', 'is_verified', 'created_at');
 
         // allow optional filtering by role or email
         if ($role = $request->query('role')) {
@@ -29,7 +29,15 @@ class UserController extends Controller
 
         $users = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return response()->json($users);
+        return response()->json([
+            'success' => true,
+            'data' => \App\Http\Resources\UserResource::collection($users),
+            'meta' => [
+                'total' => $users->total(),
+                'per_page' => $users->perPage(),
+                'current_page' => $users->currentPage(),
+            ],
+        ]);
     }
 
     /**
@@ -54,7 +62,7 @@ class UserController extends Controller
 
         $user = User::create($data);
 
-        return response()->json($user, 201);
+    return response()->json(new \App\Http\Resources\UserResource($user->load('profile','vehicles')), 201);
     }
 
     /**
@@ -86,7 +94,7 @@ class UserController extends Controller
 
         $user->update($data);
 
-        return response()->json($user);
+    return response()->json(new \App\Http\Resources\UserResource($user->load('profile','vehicles')));
     }
 
     /**

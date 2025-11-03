@@ -90,7 +90,13 @@ export const OfferRide = () => {
   });
 
   // Detect whether the authenticated user is already a registered driver
-  const isDriver = !!(user?.profile?.driver_license_number || user?.profile?.is_driver_verified || user?.profile?.vehicle_model);
+  // Consider both legacy profile fields and the new `vehicles` relation
+  const isDriver = !!(
+    user?.profile?.driver_license_number ||
+    user?.profile?.is_driver_verified ||
+    user?.profile?.vehicle_model ||
+    (Array.isArray(user?.vehicles) && user.vehicles.length > 0)
+  );
 
   // If the user is a driver, pre-fill vehicle details from their profile
   useEffect(() => {
@@ -98,8 +104,8 @@ export const OfferRide = () => {
     if (isDriver) {
       setFormData(prev => ({
         ...prev,
-        vehicleModel: prev.vehicleModel || user.profile?.vehicle_model || user.profile?.vehicleModel || '',
-        vehicleNumber: prev.vehicleNumber || user.profile?.vehicle_number_plate || user.profile?.vehicle_number || user.profile?.vehicleNumber || '',
+        vehicleModel: prev.vehicleModel || user.profile?.vehicle_model || user.profile?.vehicleModel || user?.vehicles?.[0]?.model || '',
+        vehicleNumber: prev.vehicleNumber || user.profile?.vehicle_number_plate || user.profile?.vehicle_number || user.profile?.vehicleNumber || user?.vehicles?.[0]?.number_plate || user?.vehicles?.[0]?.number || '',
       }));
     }
   }, [user]);
@@ -519,11 +525,11 @@ export const OfferRide = () => {
                         <div className="flex flex-col gap-2 text-slate-700">
                           <div className="flex items-center gap-2">
                             <Car className="w-5 h-5 text-slate-400" />
-                            <span className="font-medium">{formData.vehicleModel || '—'}</span>
+                            <span className="font-medium">{formData.vehicleModel || user?.vehicles?.[0]?.model || '—'}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-slate-100 text-slate-600 text-xs font-semibold">#</span>
-                            <span className="font-medium">{formData.vehicleNumber || '—'}</span>
+                            <span className="font-medium">{formData.vehicleNumber || user?.vehicles?.[0]?.number_plate || user?.vehicles?.[0]?.number || '—'}</span>
                           </div>
                           <div className="text-sm text-slate-500">These details are taken from your profile. If you need to use a different vehicle, update your profile first.</div>
 

@@ -8,6 +8,7 @@ use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\Profile;
+use App\Models\Vehicle;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -63,12 +64,29 @@ class AuthController extends Controller
                 }
             }
 
-            Profile::create($profileData);
+            $profile = Profile::create($profileData);
+
+            // If driver provided vehicle details during registration, create vehicle record
+            if ($request->role === 'driver' && $request->filled('vehicle_number')) {
+                try {
+                    Vehicle::create([
+                        'user_id' => $user->id,
+                        'model' => $request->vehicle_model ?? null,
+                        'color' => $request->vehicle_color ?? null,
+                        'year' => $request->vehicle_year ?? null,
+                        'number_plate' => $request->vehicle_number ?? null,
+                        'registration_number' => null,
+                        'is_verified' => false,
+                    ]);
+                } catch (\Exception $e) {
+                    // ignore errors creating vehicle for now; profile and user are already created
+                }
+            }
 
             $token = JWTAuth::fromUser($user);
 
             // Load profile relationship before returning
-            $user->load('profile');
+            $user->load('profile','vehicles');
 
             return response()->json([
                 'success' => true,
@@ -104,8 +122,8 @@ class AuthController extends Controller
         }
 
         /** @var User $user */
-        $user = auth('api')->user();
-        $user->load('profile');
+    $user = auth('api')->user();
+    $user->load('profile','vehicles');
 
         return response()->json([
             'success' => true,
@@ -125,8 +143,8 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         /** @var User $user */
-        $user = auth('api')->user();
-        $user->load('profile');
+    $user = auth('api')->user();
+    $user->load('profile','vehicles');
 
         return response()->json([
             'success' => true,

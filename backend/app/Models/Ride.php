@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Vehicle;
 
 class Ride extends Model
 {
@@ -21,8 +22,8 @@ class Ride extends Model
         'ride_date',
         'ride_time',
         'ride_type',
-        'vehicle_model',
-        'vehicle_number',
+        'vehicle_id',
+        
         'seats_available',
         'price_per_seat',
         'allow_smoking',
@@ -55,6 +56,11 @@ class Ride extends Model
     public function driver()
     {
         return $this->belongsTo(User::class, 'driver_id');
+    }
+
+    public function vehicle()
+    {
+        return $this->belongsTo(Vehicle::class, 'vehicle_id');
     }
 
     public function bookings()

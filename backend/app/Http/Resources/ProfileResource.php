@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\VehicleResource;
 
 class ProfileResource extends JsonResource
 {
@@ -31,6 +32,12 @@ class ProfileResource extends JsonResource
             'is_driver_verified' => $this->is_driver_verified,
             'is_complete' => $this->isComplete(),
             'is_verified_driver' => $this->isVerifiedDriver(),
+            // Include the user's vehicles (if available). The controller should eager-load
+            // the `user` relation with `vehicles` to avoid N+1. We still guard here so the
+            // resource won't fail if no user or vehicles are present.
+            'vehicles' => VehicleResource::collection(
+                $this->whenLoaded('user') ? $this->user->vehicles : ($this->user?->vehicles ?? [])
+            ),
         ];
     }
 }
