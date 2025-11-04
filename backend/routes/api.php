@@ -65,6 +65,9 @@ Route::prefix('v1')->middleware(['auth:api'])->group(function () {
     Route::post('/comments', [\App\Http\Controllers\Api\V1\CommentController::class, 'store']);
     Route::put('/comments/{id}', [\App\Http\Controllers\Api\V1\CommentController::class, 'update']);
     Route::delete('/comments/{id}', [\App\Http\Controllers\Api\V1\CommentController::class, 'destroy']);
+
+    // Ratings
+    Route::post('/ratings', [\App\Http\Controllers\Api\V1\RatingController::class, 'store']);
     
     // Blog routes (admin only for create/update/delete)
     Route::middleware(['role:admin'])->group(function () {

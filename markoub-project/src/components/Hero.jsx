@@ -1,7 +1,7 @@
 import { Button } from './Button';
 import { Facebook, Github, Linkedin, Twitter, MapPin, Search, Users } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { RidesAPI } from '../utils/api';
 
@@ -44,8 +44,12 @@ export const Hero = () => {
 
           {/* CTAs */}
           <div className="flex items-center justify-center gap-4 mt-6">
-            <Button variant="primary" size="lg">Find a ride</Button>
-            <Button variant="secondary" size="lg">Offer a ride</Button>
+            <Link to="/find-ride">
+              <Button variant="primary" size="lg">Find a ride</Button>
+            </Link>
+            <Link to="/offer-ride">
+              <Button variant="secondary" size="lg">Offer a ride</Button>
+            </Link>
           </div>
 
           {/* Social icons centered */}
@@ -117,8 +121,8 @@ export const Hero = () => {
               <input value={to} onChange={(e) => setTo(e.target.value)} placeholder="To (e.g. Marrakech)" className="w-full outline-none text-slate-700 text-center" />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button type="submit" disabled={isSearching} className="inline-flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-semibold px-4 py-2 rounded-md">
+          <div className="w-full sm:w-auto flex items-center">
+            <button type="submit" disabled={isSearching} className="w-full sm:w-auto inline-flex justify-center items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-semibold px-4 py-2 rounded-md">
               {isSearching ? <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> : <Search className="w-4 h-4" />}
               {isSearching ? 'Searching...' : 'Search'}
             </button>

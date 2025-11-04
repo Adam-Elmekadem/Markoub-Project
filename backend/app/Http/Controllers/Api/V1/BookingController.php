@@ -47,7 +47,33 @@ class BookingController extends Controller
             'payment_method' => 'nullable|string',
         ]);
 
-        $userId = auth('api')->id();
+        $user = auth('api')->user();
+        $userId = $user->id;
+
+        // Rule: If the user has offered rides that are not done, they cannot reserve a place
+        // Use the Ride model query (by driver_id) instead of calling the relationship method on the user
+        $hasActiveOffered = Ride::where('driver_id', $userId)
+            ->where(function ($q) {
+                $q->whereNull('status')->orWhere('status', '!=', 'done');
+            })->exists();
+        if ($hasActiveOffered) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot reserve a place while you have active offered rides. Finish or close your offers first.',
+            ], 403);
+        }
+
+        // Rule: If the user already has an active reservation (for a ride not done), prevent new reservations
+        $hasActiveBooking = Booking::where('user_id', $userId)
+            ->whereHas('ride', function ($q) {
+                $q->whereNull('status')->orWhere('status', '!=', 'done');
+            })->exists();
+        if ($hasActiveBooking) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You already have an active reservation. You cannot reserve another place until your existing reservation is completed or cancelled.',
+            ], 403);
+        }
 
         return DB::transaction(function () use ($data, $userId) {
             $ride = Ride::lockForUpdate()->findOrFail($data['ride_id']);

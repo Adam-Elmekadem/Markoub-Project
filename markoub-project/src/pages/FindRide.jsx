@@ -5,11 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
 import { RidesAPI, BookingsAPI } from '../utils/api';
+import useActionAvailability from '../hooks/useActionAvailability';
 
 export const FindRide = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, isAuthLoading } = useAuth();
   const { showToast } = useToast();
+  const { loading: availabilityLoading, canReserve, reason: availabilityReason } = useActionAvailability();
   const [filters, setFilters] = useState({
     from: '',
     to: '',
@@ -167,6 +169,11 @@ export const FindRide = () => {
     if (!isAuthenticated) {
       showToast('Please login to book a ride', 'error');
       navigate('/login', { state: { from: '/find-ride' } });
+      return;
+    }
+    // Client-side pre-check: avoid opening booking modal if server would block the action
+    if (!availabilityLoading && !canReserve) {
+      showToast(availabilityReason || 'You cannot book a ride right now. Finish or cancel existing reservations/offers.', 'error');
       return;
     }
     
@@ -342,7 +349,7 @@ export const FindRide = () => {
               type="text"
               value={filters.to}
               onChange={(e) => updateFilter('to', e.target.value)}
-              placeholder="Chitkara University"
+              placeholder="Enter dropoff location"
               className="w-full pl-10 pr-3 py-3 rounded-lg bg-white text-slate-900 placeholder-slate-400 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -439,7 +446,7 @@ export const FindRide = () => {
         {/* Header */}
         <div className="mb-8 mt-16">
           <h1 className="text-3xl md:text-4xl font-bold text-blue-700 mb-2">Find Your Ride</h1>
-          <p className="text-slate-600">Discover available rides from Rajpura to Chitkara University and beyond</p>
+          <p className="text-slate-600">Discover available rides from your location and quickly, no matter your destination.</p>
         </div>
 
         <div className="grid lg:grid-cols-[350px_1fr] gap-6">
@@ -534,7 +541,7 @@ export const FindRide = () => {
                       {/* Route Info */}
                       <div className="mb-6 bg-gray-50 rounded-xl p-4">
                         {/* Times Row */}
-                        <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center justify-between mb-4">
                           <div>
                             <p className="text-2xl font-bold text-blue-700 mb-1">{ride.departTime}</p>
                             <p className="text-sm text-slate-600 font-medium">{ride.from}</p>
@@ -542,7 +549,7 @@ export const FindRide = () => {
                           
                           <div className="text-right">
                             <p className="text-2xl font-bold text-blue-700 mb-1">{ride.arriveTime}</p>
-                            <p className="text-sm text-slate-600 font-medium">{ride.to}</p>
+                            <p className="mt-8 text-sm text-slate-600 font-medium">{ride.to}</p>
                           </div>
                         </div>
 
@@ -557,8 +564,8 @@ export const FindRide = () => {
                         </div>
                       </div>
 
-                      {/* Price and Book */}
-                      <div className="flex items-center justify-between">
+                      {/* Price and Book - responsive: stack on mobile, inline on md+ */}
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0">
                         <div className="flex gap-2 flex-wrap">
                           {ride.preferences.map((pref, idx) => (
                             <span key={idx} className="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full font-medium border border-blue-200">
@@ -566,17 +573,24 @@ export const FindRide = () => {
                             </span>
                           ))}
                         </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <p className="text-3xl font-bold text-orange-500">${ride.price}</p>
-                            <p className="text-xs text-slate-500">{ride.seatsLeft} seats left</p>
+
+                        <div className="flex items-center justify-between w-full md:w-auto gap-4">
+                          <div className="flex-1 flex items-center justify-between md:justify-end">
+                            <div>
+                              <p className="text-3xl font-bold text-orange-500">${ride.price}</p>
+                              <p className="text-xs text-slate-500">{ride.seatsLeft} seats left</p>
+                            </div>
                           </div>
-                          <button
-                            onClick={() => handleBook(ride)}
-                            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg transition-colors shadow-md cursor-pointer"
-                          >
-                            Book Now
-                          </button>
+
+                          <div className="w-full md:w-auto">
+                            <button
+                              onClick={() => handleBook(ride)}
+                              disabled={!canReserve}
+                              className={`w-full md:w-auto px-6 py-3 rounded-lg transition-colors shadow-md ${!canReserve ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-orange-500 hover:bg-orange-600 text-white font-semibold cursor-pointer'}`}
+                            >
+                              Book Now
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

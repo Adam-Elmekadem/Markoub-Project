@@ -195,3 +195,10 @@ export const BlogsAPI = {
     return res?.data;
   },
 };
+
+export const RatingsAPI = {
+  async create(payload) {
+    const res = await api('/ratings', { method: 'POST', body: payload });
+    return res?.data;
+  },
+};

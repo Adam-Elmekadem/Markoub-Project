@@ -129,7 +129,21 @@ class RideController extends Controller
         // Remove vehicle_* from the data used to create the ride itself
         unset($validated['vehicle_model'], $validated['vehicle_number']);
 
-        $validated['driver_id'] = auth('api')->id();
+        $driver = auth('api')->user();
+
+        // Prevent drivers from offering a new ride if they already have non-completed offers
+        $hasActiveOffers = \App\Models\Ride::where('driver_id', $driver->id)
+            ->where(function ($q) {
+                $q->whereNull('status')->orWhere('status', '!=', 'done');
+            })->exists();
+        if ($hasActiveOffers) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You already have active or planned rides. Finish them before offering a new ride.',
+            ], 403);
+        }
+
+        $validated['driver_id'] = $driver->id;
         $validated['status'] = 'active';
 
         $ride = Ride::create($validated);

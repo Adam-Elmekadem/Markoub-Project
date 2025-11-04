@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
 import { MapPin, Calendar, Clock, Car, Users, DollarSign, Navigation } from 'lucide-react';
+import useActionAvailability from '../hooks/useActionAvailability';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/Toast';
@@ -61,6 +62,7 @@ function MapBoundsFitter({ pickUp, dropOff }) {
 
 export const OfferRide = () => {
   const { isAuthenticated, user } = useAuth();
+  const { loading: availabilityLoading, canOffer, reason: availabilityReason } = useActionAvailability();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
@@ -345,6 +347,8 @@ export const OfferRide = () => {
     { number: 3, label: 'Details' },
   ];
 
+  const showAvailabilityModal = !availabilityLoading && !canOffer;
+
   return (
     <>
       <section className="py-8 md:py-16 bg-white/80 min-h-screen">
@@ -355,34 +359,62 @@ export const OfferRide = () => {
             <Navigation className="w-6 h-6 text-white mx-auto" />
           </div>
 
-          {/* Step Indicator */}
-          <div className="flex justify-center items-center mb-8 max-w-md mx-auto">
-            {steps.map((step, idx) => (
-              <div key={step.number} className="flex items-center">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-colors ${
-                      currentStep >= step.number
-                        ? 'bg-orange-500 text-white'
-                        : 'bg-white border border-orange-500 text-slate-400'
-                    }`}
-                  >
-                    {step.number}
+          {/* Step Indicator (hidden when user cannot offer) */}
+          {!showAvailabilityModal && (
+            <div className="flex justify-center items-center mb-8 max-w-md mx-auto">
+              {steps.map((step, idx) => (
+                <div key={step.number} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-colors ${
+                        currentStep >= step.number
+                          ? 'bg-orange-500 text-white'
+                          : 'bg-white border border-orange-500 text-slate-400'
+                      }`}
+                    >
+                      {step.number}
+                    </div>
+                    <span className="text-white text-xs mt-1">{step.label}</span>
                   </div>
-                  <span className="text-white text-xs mt-1">{step.label}</span>
+                  {idx < steps.length - 1 && (
+                    <div className={`w-16 h-1 mx-2 ${currentStep > step.number ? 'bg-orange-500' : 'bg-white/30'}`} />
+                  )}
                 </div>
-                {idx < steps.length - 1 && (
-                  <div className={`w-16 h-1 mx-2 ${currentStep > step.number ? 'bg-orange-500' : 'bg-white/30'}`} />
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* Form Container */}
           <div className="max-w-5xl mx-auto grid md:grid-cols-[1fr_400px] gap-6">
             {/* Left: Form Card */}
-            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-              <form onSubmit={handleSubmit}>
+            <div className={(!availabilityLoading && !canOffer)
+              ? 'rounded-2xl p-0 bg-transparent shadow-none'
+              : 'bg-white rounded-2xl shadow-xl p-6 md:p-8'}>
+              {/* If user cannot offer, show the blocking message in place of the form */}
+              {(!availabilityLoading && !canOffer) ? (
+                <>
+                  {/* keep the left column height so layout doesn't jump */}
+                  <div className="min-h-[420px]" />
+
+                  {/* Full-viewport centered blocking message (no shadow) */}
+                  <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" style={{padding: '1rem'}}>
+                    <div role="alert" aria-live="polite" className="pointer-events-auto max-w-md w-[min(92%,420px)] bg-red-50 border border-red-200 rounded-lg p-6 flex flex-col items-center gap-4 text-center">
+                      <div className="text-4xl animate-pulse">😡</div>
+                      <h3 className="text-xl font-semibold text-red-700">Sorry — you can't offer another ride yet</h3>
+                      <p className="text-sm text-red-600">{availabilityReason || "You can't offer two rides until finishing the previous one."}</p>
+                      <div className="mt-2">
+                        <button
+                          onClick={() => navigate('/profile')}
+                          className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-lg font-semibold"
+                        >
+                          Manage my rides
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <form onSubmit={handleSubmit}>
                 {/* Step 1: Route & Time */}
                 {currentStep === 1 && (
                   <div className="space-y-6">
@@ -661,7 +693,7 @@ export const OfferRide = () => {
                 )}
 
                 {/* Navigation Buttons */}
-                <div className="flex gap-4 mt-8">
+                <div className="flex gap-4 mt-08">
                   {currentStep > 1 && (
                     <button
                       type="button"
@@ -672,83 +704,103 @@ export const OfferRide = () => {
                     </button>
                   )}
                   {currentStep < 3 ? (
-                    <button
-                      type="button"
-                      onClick={nextStep}
-                      className="flex-1 bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 rounded-lg transition-colors cursor-pointer"
-                    >
-                      Continue
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      className="flex-1 bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 rounded-lg transition-colors cursor-pointer"
-                    >
-                      Create Ride
-                    </button>
-                  )}
+                      <button
+                        type="button"
+                        onClick={nextStep}
+                        className="mt-4 flex-1 bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 rounded-lg transition-colors cursor-pointer"
+                      >
+                        Continue
+                      </button>
+                    ) : (
+                      <div className="w-full">
+                        {/* Show availability message when loaded */}
+                        {!availabilityLoading && !canOffer && (
+                          <div role="alert" aria-live="polite" className="mb-3">
+                            <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                              <div className="text-2xl animate-pulse">😡</div>
+                              <div>
+                                <div className="font-semibold text-red-700">Sorry — you can't offer another ride yet</div>
+                                <div className="text-sm text-red-600">{availabilityReason || "You can't offer two rides until finishing the previous one."}</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        <button
+                          type="submit"
+                          disabled={!canOffer}
+                          className={`flex-1 w-full ${!canOffer ? 'opacity-50 cursor-not-allowed' : 'bg-blue-700 hover:bg-blue-800'} text-white font-semibold py-3 rounded-lg transition-colors`}
+                        >
+                          {availabilityLoading ? 'Checking...' : 'Create Ride'}
+                        </button>
+                      </div>
+                    )}
                 </div>
               </form>
+              )}
             </div>
 
-            {/* Right: Interactive Map */}
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-              <div className="w-full h-96 md:h-full">
-                <MapContainer
-                  center={mapCenter}
-                  zoom={13}
-                  style={{ height: '100%', width: '100%' }}
-                >
-                  <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  />
-                  {selectingFor && (
-                    <MapClickHandler 
-                      onLocationSelect={handleLocationSelect} 
-                      selectingFor={selectingFor}
+            {/* Right: Interactive Map (hidden when user cannot offer) */}
+            {!showAvailabilityModal && (
+              <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div className="w-full h-96 md:h-full">
+                  <MapContainer
+                    center={mapCenter}
+                    zoom={13}
+                    style={{ height: '100%', width: '100%' }}
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     />
-                  )}
-                  {formData.pickUpCoords && (
-                    <Marker 
-                      position={[formData.pickUpCoords.lat, formData.pickUpCoords.lng]}
-                      icon={pickupIcon}
+                    {selectingFor && (
+                      <MapClickHandler 
+                        onLocationSelect={handleLocationSelect} 
+                        selectingFor={selectingFor}
+                      />
+                    )}
+                    {formData.pickUpCoords && (
+                      <Marker 
+                        position={[formData.pickUpCoords.lat, formData.pickUpCoords.lng]}
+                        icon={pickupIcon}
+                      />
+                    )}
+                    {formData.dropOffCoords && (
+                      <Marker 
+                        position={[formData.dropOffCoords.lat, formData.dropOffCoords.lng]}
+                        icon={dropoffIcon}
+                      />
+                    )}
+                    {formData.pickUpCoords && formData.dropOffCoords && (
+                      <Polyline
+                        positions={[
+                          [formData.pickUpCoords.lat, formData.pickUpCoords.lng],
+                          [formData.dropOffCoords.lat, formData.dropOffCoords.lng]
+                        ]}
+                        color="#0000cd"
+                        weight={6}
+                        opacity={0.8}
+                      />
+                    )}
+                    <MapBoundsFitter 
+                      pickUp={formData.pickUpCoords} 
+                      dropOff={formData.dropOffCoords} 
                     />
-                  )}
-                  {formData.dropOffCoords && (
-                    <Marker 
-                      position={[formData.dropOffCoords.lat, formData.dropOffCoords.lng]}
-                      icon={dropoffIcon}
-                    />
-                  )}
-                  {formData.pickUpCoords && formData.dropOffCoords && (
-                    <Polyline
-                      positions={[
-                        [formData.pickUpCoords.lat, formData.pickUpCoords.lng],
-                        [formData.dropOffCoords.lat, formData.dropOffCoords.lng]
-                      ]}
-                      color="#0000cd"
-                      weight={6}
-                      opacity={0.8}
-                    />
-                  )}
-                  <MapBoundsFitter 
-                    pickUp={formData.pickUpCoords} 
-                    dropOff={formData.dropOffCoords} 
-                  />
-                </MapContainer>
+                  </MapContainer>
+                </div>
+                <div className="p-4 bg-slate-50 border-t">
+                  <p className="text-sm text-slate-600 text-center">
+                    {selectingFor 
+                      ? `Click on the map to select ${selectingFor === 'pickUp' ? 'pick-up' : 'drop-off'} location`
+                      : 'Click the map pin buttons to select locations'
+                    }
+                  </p>
+                </div>
               </div>
-              <div className="p-4 bg-slate-50 border-t">
-                <p className="text-sm text-slate-600 text-center">
-                  {selectingFor 
-                    ? `Click on the map to select ${selectingFor === 'pickUp' ? 'pick-up' : 'drop-off'} location`
-                    : 'Click the map pin buttons to select locations'
-                  }
-                </p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
+
+        
       </section>
     </>
   );

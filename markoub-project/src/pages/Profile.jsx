@@ -727,6 +727,17 @@ export const Profile = () => {
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-blue-700 mb-2">My Profile</h1>
           <p className="text-slate-600">Manage your account and rides</p>
+          {/* Driver rating: shown only when backend provides it (profile.ratings) */}
+          {user?.profile?.ratings != null ? (
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <div className="inline-flex items-center text-sm text-yellow-500">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <svg key={i} className={`w-4 h-4 ${i < Math.round(user.profile.ratings.average) ? 'fill-current' : 'text-slate-200'}`} viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 15l-5.878 3.09 1.122-6.545L.487 6.91l6.561-.954L10 0l2.952 5.956 6.561.954-4.757 4.635 1.122 6.545z"/></svg>
+                ))}
+              </div>
+              <div className="text-sm text-slate-600">{user.profile.ratings.average} • {user.profile.ratings.count} reviews</div>
+            </div>
+          ) : null}
         </div>
 
         {/* Tabs */}

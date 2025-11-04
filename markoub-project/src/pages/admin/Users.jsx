@@ -96,21 +96,20 @@ const formatUserName = (u) => {
   if (u.name) return u.name;
   if (u.full_name) return u.full_name;
   if (u.fullName) return u.fullName;
-  // fallback to email if nothing else
   return u.email || '';
 };
 
 const UsersCardList = ({ users, onEdit, onDelete, onView }) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
     {users.map((u) => (
-      <div key={u.id} onClick={() => onView && onView(u)} className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 cursor-pointer hover:shadow-lg transition">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-sm text-slate-500">Name</div>
-            <div className="font-medium text-slate-900">{formatUserName(u)}</div>
-            <div className="text-sm text-slate-600">{u.email}</div>
+      <div key={u.id} onClick={() => onView && onView(u)} className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 cursor-pointer hover:shadow-lg transition overflow-hidden">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-sm text-slate-500">Name</div>
+                <div title={formatUserName(u)} className="font-medium text-slate-900 truncate">{formatUserName(u)}</div>
+                <div title={u.email} className="text-sm text-slate-600 truncate">{u.email}</div>
             <div className="mt-2">
-              {/* Role badge with color */}
+              
               {u.role ? (
                 (() => {
                   const roleRaw = (u.role || '').toLowerCase();

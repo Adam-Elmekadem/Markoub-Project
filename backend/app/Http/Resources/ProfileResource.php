@@ -32,6 +32,21 @@ class ProfileResource extends JsonResource
             'is_driver_verified' => $this->is_driver_verified,
             'is_complete' => $this->isComplete(),
             'is_verified_driver' => $this->isVerifiedDriver(),
+            // Ratings: include summary only if the user has offered rides before.
+            // If they offered rides but have no ratings yet, return average=0 and count=0
+            'ratings' => (function () {
+                try {
+                    $user = $this->whenLoaded('user') ? $this->user : ($this->user ?? null);
+                    if (!$user) return null;
+                    $hasOffers = $user->offeredRides()->exists();
+                    if (!$hasOffers) return null;
+                    $count = \App\Models\Rating::where('reviewee_id', $user->id)->count();
+                    $avg = $count ? round((float) \App\Models\Rating::where('reviewee_id', $user->id)->avg('rating'), 2) : 0;
+                    return ['average' => $avg, 'count' => $count];
+                } catch (\Throwable $e) {
+                    return null;
+                }
+            })(),
             // Include the user's vehicles (if available). The controller should eager-load
             // the `user` relation with `vehicles` to avoid N+1. We still guard here so the
             // resource won't fail if no user or vehicles are present.

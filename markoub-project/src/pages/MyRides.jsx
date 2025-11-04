@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Car, Users, MapPin, Calendar, Clock, DollarSign, User, Send, Phone } from 'lucide-react';
 import { Spinner } from '../components/Spinner';
 import { useToast } from '../components/Toast';
-import { RidesAPI, BookingsAPI } from '../utils/api';
+import { RidesAPI, BookingsAPI, RatingsAPI } from '../utils/api';
 
 export const MyRides = () => {
   const { isAuthenticated, user, isAuthLoading } = useAuth();
@@ -130,6 +130,9 @@ export const MyRides = () => {
           to: b.dropoff_location || b.ride?.to_location,
           date: b.ride?.ride_date || null,
           time: b.ride?.ride_time || null,
+          // include the ride status so we can allow rating only after completion
+          rideStatus: (b.ride?.status || b.ride?.ride_status || '')?.toLowerCase(),
+          rideId: b.ride?.id || null,
           driver: { name: driverName, phone: driverPhone },
           price: b.total_price,
           seatsReserved: b.seats_booked
@@ -187,16 +190,33 @@ export const MyRides = () => {
     }
   };
 
-  const saveRating = (rideId, ratingValue, comment) => {
+  const saveRating = async (rideId, ratingValue, comment) => {
+    // Try to send rating to backend (booking id expected)
     try {
+      if (!ratingValue || ratingValue <= 0) {
+        showToast('Please select a rating', 'error');
+        return;
+      }
+      await RatingsAPI.create({ booking_id: rideId, rating: Number(ratingValue), comment: comment || '' });
+      // Update local UI state
       const store = JSON.parse(localStorage.getItem('my_ride_ratings') || '{}');
       store[rideId] = { rating: Number(ratingValue) || 0, comment: comment || '' };
       localStorage.setItem('my_ride_ratings', JSON.stringify(store));
       setRatings(store);
-      showToast('Rating saved', 'success');
-    } catch (e) {
-      console.error('Failed to save rating', e);
-      showToast('Unable to save rating', 'error');
+      showToast('Rating submitted', 'success');
+    } catch (err) {
+      console.error('Failed to save rating to server, falling back to local store', err);
+      // Fallback to local storage if API fails
+      try {
+        const store = JSON.parse(localStorage.getItem('my_ride_ratings') || '{}');
+        store[rideId] = { rating: Number(ratingValue) || 0, comment: comment || '' };
+        localStorage.setItem('my_ride_ratings', JSON.stringify(store));
+        setRatings(store);
+        showToast('Saved locally (offline)', 'warning');
+      } catch (e) {
+        console.error('Failed to save rating locally', e);
+        showToast('Unable to save rating', 'error');
+      }
     }
   }
 
@@ -464,6 +484,7 @@ export const MyRides = () => {
                           </div>
                         )}
                         {/* Rating & comment (stored locally) — vertical layout with send icon */}
+                        {ride.rideStatus === 'done' ? (
                         <div className="pt-4 mt-4">
                           <label className="block text-sm font-semibold text-slate-700 mb-2">Your rating</label>
                           <div className="flex flex-col gap-3">
@@ -508,6 +529,9 @@ export const MyRides = () => {
                           </div>
                           <div className="mt-2 text-xs text-slate-500">Ratings are stored locally on your device.</div>
                         </div>
+                        ) : (
+                          <div className="pt-4 mt-4 text-sm text-slate-500">You can rate the driver once the ride is marked as done.</div>
+                        )}
                       </div>
                     ))}
                   </div>
